@@ -21,5 +21,5 @@ Since the bytecode did not provide any clue, the next step was to debug the JVM 
 
 `ClassFileParser::apply_parsed_class_attributes` is called twice for `CompletableFuture`. Once before instrumentation and once after. And in both cases, the `_generic_signature_index` is correct.
 
-But then in `VM_RedefineClasses::rewrite_cp_refs`, by the time it is rewriting the generic signature index it does something funny. The `generic_signature_index` contains the correct index for the instrumented class. `new_generic_signature_index` then points to the generic signature index in the bytecode for the original `CompletableFuture`. And it sets the old index on the new class. Although this is odd, after merging the constant pools, the index is set at the correct value.
+But then in `VM_RedefineClasses::rewrite_cp_refs`, by the time it is rewriting the generic signature index it does something funny. The `generic_signature_index` contains the correct index for the instrumented class. `new_generic_signature_index` then points to the generic signature index in the bytecode for the original `CompletableFuture`. And it sets the old index on the new class. Later it seems that the indexes are fine, but then the String on constants->generic_signature() starts being wrong.
 
