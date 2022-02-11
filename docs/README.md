@@ -1,4 +1,5 @@
-#Investigation
+# Investigation
+
 It was first pointed out that a call to get a method generic return type was throwing an exception.
 
 During the [investigation](https://github.com/newrelic/newrelic-java-agent/issues/526) it was found that the exception was thrown while gathering the method's data.
