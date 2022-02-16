@@ -23,3 +23,4 @@ Since the bytecode did not provide any clue, the next step was to debug the JVM 
 
 But then in `VM_RedefineClasses::rewrite_cp_refs`, by the time it is rewriting the generic signature index it does something funny. The `generic_signature_index` contains the correct index for the instrumented class. `new_generic_signature_index` then points to the generic signature index in the bytecode for the original `CompletableFuture`. And it sets the old index on the new class. Later it seems that the indexes are fine, but then the String on constants->generic_signature() starts being wrong.
 
+On `VM_RedefineClasses::merge_cp_and_rewrite` up to the call to `VM_RedefineClasses::rewrite_cp_refs`, `scratch_class->constants()->generic_signature()` has the expected value. After the call it changes, and after the call to `VM_RedefineClasses::set_new_constant_pool` it changes, now to the value we receveive when we use reflection.
