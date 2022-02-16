@@ -21,10 +21,44 @@ Since the bytecode did not provide any clue, the next step was to debug the JVM 
 
 `ClassFileParser::apply_parsed_class_attributes` is called twice for `CompletableFuture`. Once before instrumentation and once after. And in both cases, the `_generic_signature_index` is correct.
 
-Following the execution to `VM_RedefineClasses::merge_cp_and_rewrite` a call is made to `VM_RedefineClasses::rewrite_cp_refs`, where the generic signature index is set. At this point, `scratch_class->generic_signature()->as_C_string()` has the correct value (4). When it is about to call `scratch_class->set_generic_signature_index(new_generic_signature_index);`:
-- `generic_signature_index` has the index to the correct signature in the instrumented bytecode (4);
-- `new_generic_signature_index` has the index to the correct signature in the original bytecode (1019).
+Following the execution to `VM_RedefineClasses::merge_cp_and_rewrite`:
+```c++
+1794  jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
+1795               InstanceKlass* the_class, InstanceKlass* scratch_class,
+1796               TRAPS) {
+...
+...       // point A
+1916      if (!rewrite_cp_refs(scratch_class)) { 
+1917        return JVMTI_ERROR_INTERNAL;
+1918      }
+...       // point B
+...
+1924      set_new_constant_pool(loader_data, scratch_class, merge_cp, merge_cp_length,
+1925                            CHECK_(JVMTI_ERROR_OUT_OF_MEMORY));
+...       // point C
+...
+1931      cp_cleaner.add_scratch_cp(scratch_cp());
+...
+```
+At point A, `scratch_class->generic_signature()` is correct and `generic_signature_index` is 4.
 
-And it sets the old index on the new class and the generic signature becomes invalid until the call to `VM_RedefineClasses::set_new_constant_pool`. After this call, the generic_signature_index in the scratch_class' constants is once again set to the index in the instrumented bytecode (4). But at this point, the constant pool in memory has the correct generic signature at the index for the original bytecode (1019).
+At point B, `scratch_class->generic_signature()` is wrong, its value changes with each run, and `generic_signature_index` is 1019.
 
+At point C, `scratch_class->generic_signature()` is the value observed at runtime and `generic_signature_index` is 4. Also `scratch_class->constants()->symbol_at(1019)` has the correct generic signature.
 
+Note that 1019 is the index for the generic signature in the original bytecode and 4 is the index for the generic signature in the instrumented bytecode.
+
+Inside `VM_RedefineClasses::rewrite_cp_refs` the explanation to what happens between points A and B.
+```
+1936  bool VM_RedefineClasses::rewrite_cp_refs(InstanceKlass* scratch_class) {
+...
+2024    // rewrite class generic signature index:
+2025    u2 generic_signature_index = scratch_class->generic_signature_index(); // this is set to 4
+2026    if (generic_signature_index != 0) {
+2027      u2 new_generic_signature_index = find_new_index(generic_signature_index); // this is set to 1019
+2028      if (new_generic_signature_index != 0) {
+2029        scratch_class->set_generic_signature_index(new_generic_signature_index);
+2030      }
+2031    }
+...
+```
