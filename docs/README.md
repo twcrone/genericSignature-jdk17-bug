@@ -21,4 +21,10 @@ Since the bytecode did not provide any clue, the next step was to debug the JVM 
 
 `ClassFileParser::apply_parsed_class_attributes` is called twice for `CompletableFuture`. Once before instrumentation and once after. And in both cases, the `_generic_signature_index` is correct.
 
-Following the execution to `VM_RedefineClasses::merge_cp_and_rewrite`, in `VM_RedefineClasses::rewrite_cp_refs`, it rewrites the generic signature index. The `generic_signature_index` contains the correct index for the instrumented class. `new_generic_signature_index` then points to the generic signature index in the bytecode for the original `CompletableFuture`. And it sets the old index on the new class. It looks like at this point the Constant Pool in memory is no longer the same as the pool in the bytecode that is returned from instrumentation.
+Following the execution to `VM_RedefineClasses::merge_cp_and_rewrite` a call is made to `VM_RedefineClasses::rewrite_cp_refs`, where the generic signature index is set. At this point, `scratch_class->generic_signature()->as_C_string()` has the correct value (4). When it is about to call `scratch_class->set_generic_signature_index(new_generic_signature_index);`:
+- `generic_signature_index` has the index to the correct signature in the instrumented bytecode (4);
+- `new_generic_signature_index` has the index to the correct signature in the original bytecode (1019).
+
+And it sets the old index on the new class and the generic signature becomes invalid until the call to `VM_RedefineClasses::set_new_constant_pool`. After this call, the generic_signature_index in the scratch_class' constants is once again set to the index in the instrumented bytecode (4). But at this point, the constant pool in memory has the correct generic signature at the index for the original bytecode (1019).
+
+
