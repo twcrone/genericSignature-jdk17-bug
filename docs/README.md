@@ -15,7 +15,7 @@ Bytecodes:
 - [original CompletableFuture](CompletableFuture.bytecode.txt).
 - [instrumented CompletableFuture](CompletableFuture-instrumented.bytecode.txt)
 
-Further comparing the bytecodes, the only differences are the order of the items in the constant pool (which cause the references throught the class to change), the order of the methods and the order of the tables in each method (LineNumberTable, LocalVariableTable, LocalVariableTypeTable).
+Further comparing the bytecodes, the only differences are the order of the items in the constant pool (which cause the references throughout the class to change), the order of the methods and the order of the tables in each method (LineNumberTable, LocalVariableTable, LocalVariableTypeTable).
 
 Since the bytecode did not provide any clue, the next step was to debug the JVM itself.
 
