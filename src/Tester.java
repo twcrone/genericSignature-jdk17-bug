@@ -9,12 +9,21 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class Tester {
 
     public static void main(String... args) throws Throwable {
+
+        Class<?> klass = CompletableFuture.class;
+
+		System.out.println("--- Annotations ---");
+		Arrays.stream(klass.getDeclaredAnnotations()).forEach((it) -> System.out.println(it.toString()));
+
+		System.out.println("--- Fields ---");
+		Arrays.stream(klass.getDeclaredFields()).forEach((it) -> System.out.println(it.getName()) );
 
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         MethodHandles.Lookup classLookup = MethodHandles.privateLookupIn(Class.class, lookup);
